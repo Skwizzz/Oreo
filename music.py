@@ -26,7 +26,8 @@ class Music(commands.Cog):
 
     @commands.command()
     async def play(self,ctx, *, search: str):
-
+        print("PLAY COMMAND CALLED")
+        await ctx.send("Commande reçue")
         player: wavelink.Player = ctx.voice_client
 
         if not player:
