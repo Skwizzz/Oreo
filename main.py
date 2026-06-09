@@ -55,7 +55,7 @@ async def on_ready():
         host="lavalink-production-6add.up.railway.app",
         port=2333,
         password="oreo123"
-
+    )
 @bot.command()
 async def clear(ctx, amount: str):
     if amount.lower() == "all":
