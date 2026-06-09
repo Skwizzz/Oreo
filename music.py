@@ -33,10 +33,16 @@ class Music(commands.Cog):
         queue = self.get_queue(ctx.guild.id)
 
         ydl_opts = {
-            'format': 'bestaudio/best',
-            'quiet': True,
-            'default_search': 'ytsearch1',
-        }
+        'format': 'bestaudio/best',
+        'quiet': True,
+        'default_search': 'ytsearch1',
+        'cookiefile': 'cookies.txt',
+        'noplaylist': True,
+        'nocheckcertificate': True,
+        'http_headers': {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    }
+}
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(query, download=False)
