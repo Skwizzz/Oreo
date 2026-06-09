@@ -6,7 +6,7 @@ queues = {}
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+        print("Music cog loaded")
     def get_queue(self, guild_id):
         if not hasattr(self.bot, "queues"):
             self.bot.queues = {}
