@@ -50,6 +50,11 @@ async def on_ready():
     print(f"Bot ping : {round(bot.latency * 1000)} ms ")
     activity = discord.Game(name=f"Oreo V1 💜, https://skwizzz.github.io/OreoHelpPanel/, I am in {len(bot.guilds)} servers")
     await bot.change_presence(status=discord.Status.online, activity=activity)
+    await wavelink.NodePool.create_node(
+        bot=bot,
+        host="lavalink-production-6add.up.railway.app",
+        port=2333,
+        password="oreo123"
 
 @bot.command()
 async def clear(ctx, amount: str):
