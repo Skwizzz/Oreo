@@ -30,7 +30,9 @@ class MyBot(commands.Bot):
     async def setup_hook(self):
         await self.add_cog(Music(self))
         await self.load_extension("debug")
-       
+        print("Loading Music...")
+        await self.add_cog(Music(self))
+        print("Music loaded")
 bot = MyBot(command_prefix=get_prefix, intents=discord.Intents.all())
 @bot.command()
 @commands.has_permissions(administrator=True)
