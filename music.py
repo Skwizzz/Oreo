@@ -25,7 +25,7 @@ class Music(commands.Cog):
             await ctx.voice_client.disconnect()
 
     @commands.command()
-    async def play(ctx, *, search: str):
+    async def play(self,ctx, *, search: str):
 
         player: wavelink.Player = ctx.voice_client
 
@@ -67,7 +67,7 @@ class Music(commands.Cog):
             ctx.voice_client.play(source, after=lambda e: self.play_next(ctx))
 
     @commands.command()
-    async def skip(ctx):
+    async def skip(self,ctx):
         player: wavelink.Player = ctx.voice_client
         await player.stop()
 
