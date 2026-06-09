@@ -14,10 +14,10 @@ class Music(commands.Cog):
 
     @commands.command()
     async def join(self, ctx):
-        if ctx.author.voice:
-            await ctx.author.voice.channel.connect()
-        else:
-            await ctx.send("You're not in a voice channel")
+        async def join(ctx):
+            if ctx.author.voice:
+                channel = ctx.author.voice.channel
+        await channel.connect(cls=wavelink.Player)
 
     @commands.command()
     async def leave(self, ctx):
@@ -25,36 +25,27 @@ class Music(commands.Cog):
             await ctx.voice_client.disconnect()
 
     @commands.command()
-    async def play(self, ctx, *, query: str):
+    async def play(ctx, *, search: str):
 
-        if not ctx.voice_client:
-            await ctx.invoke(self.join)
+        player: wavelink.Player = ctx.voice_client
+
+        if not player:
+            player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
+
+        tracks = await wavelink.YouTubeTrack.search(search)
+
+        if not tracks:
+            return await ctx.send("No song found")
+
+        track = tracks[0]
+
+        await player.play(track)
+
+        await ctx.send(f"🎵 Now playing: **{track.title}**")
 
         queue = self.get_queue(ctx.guild.id)
 
-        ydl_opts = {
-        'format': 'bestaudio/best',
-        'quiet': True,
-        'default_search': 'ytsearch1',
-        'cookiefile': 'cookies.txt',
-        'noplaylist': True,
-        'nocheckcertificate': True,
-        'http_headers': {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-    }
-}
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(query, download=False)
-
-            if 'entries' in info:
-                info = info['entries'][0]
-
-        queue.append({
-            "url": info["webpage_url"],
-            "title": info["title"]
-        })
-
+        
         await ctx.send(f"🎵 Added: **{info['title']}**")
 
         if not ctx.voice_client.is_playing():
@@ -76,9 +67,9 @@ class Music(commands.Cog):
             ctx.voice_client.play(source, after=lambda e: self.play_next(ctx))
 
     @commands.command()
-    async def skip(self, ctx):
-        if ctx.voice_client:
-            ctx.voice_client.stop()
+    async def skip(ctx):
+        player: wavelink.Player = ctx.voice_client
+        await player.stop()
 
     @commands.command()
     async def stop(self, ctx):
