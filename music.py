@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import yt_dlp
+import wavelink
 from discord import FFmpegPCMAudio
 queues = {}
 class Music(commands.Cog):
