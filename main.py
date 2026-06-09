@@ -12,137 +12,45 @@ import yt_dlp
 import asyncio
 from discord import FFmpegPCMAudio
 import time
+import json
+from prefix import load_prefixes, set_prefix, get_prefix
+from music import Music
+from debug import Debug
+from prefix import prefixes
+PREFIX_FILE = "prefixes.json"
 load_dotenv()
+load_prefixes()
 token = os.getenv('DISCORD_TOKEN')
 
 handler = logging.FileHandler(filename='discord.log',encoding='utf8',mode='w')
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
 
-bot = commands.Bot(command_prefix='?',intents=intents,status="?help for list of commands")
+
+
+class MyBot(commands.Bot):
+    async def setup_hook(self):
+        await self.add_cog(Music(self))
+        await self.load_extension("debug")
+       
+bot = MyBot(command_prefix=get_prefix, intents=discord.Intents.all())
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def setprefix(ctx, new_prefix):
+    set_prefix(ctx.guild.id, new_prefix)
+
+    await ctx.send(f"My new prefix is now: `{new_prefix}`")
 #GETTING QUEUES FOR THE MUSIC 
-queues = {}
 
-def get_queue(guild_id):
-    if guild_id not in queues:
-        queues[guild_id] = []
-    return queues[guild_id]
+
+
 #COMMANDS AND EVENTS
 @bot.event
 async def on_ready():
 
     print(f"Bot successfully logged in as {bot.user.name}")
     print(f"Bot ping : {round(bot.latency * 1000)} ms ")
-# COMMANDS FOR THE MUSIC PLAYER
-@bot.command()
-async def join(ctx):
-    if ctx.author.voice:
-        channel = ctx.author.voice.channel
-        await channel.connect()
+    activity = discord.Game(name=f"Oreo V1 💜, https://skwizzz.github.io/OreoHelpPanel/, I am in {len(bot.guilds)} servers")
+    await bot.change_presence(status=discord.Status.online, activity=activity)
 
-@bot.command()
-async def leave(ctx):
-    if ctx.voice_client:
-        await ctx.voice_client.disconnect()
-def play_next(ctx):
-    queue = get_queue(ctx.guild.id)
-
-    if len(queue) > 0:
-        song = queue.pop(0)
-
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'quiet': True
-        }
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(song["url"], download=False)
-            audio_url = info["url"]
-
-        source = FFmpegPCMAudio(
-            audio_url,
-            before_options="-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
-        )
-
-        ctx.voice_client.play(
-            source,
-            after=lambda e: play_next(ctx)
-        )
-
-@bot.command()
-async def play(ctx, *, query: str):
-
-    if not ctx.voice_client:
-        await ctx.invoke(join)
-
-    queue = get_queue(ctx.guild.id)
-
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'quiet': True,
-        'default_search': 'ytsearch1',  
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(query, download=False)
-
-        # ytsearch renvoie une liste
-        if 'entries' in info:
-            info = info['entries'][0]
-
-        url = info['url']
-        title = info.get('title')
-
-    queue.append({
-    "url": info["webpage_url"],
-    "title": title
-})
-
-    await ctx.send(f"🎵 Added : **{title}** to queue")
-
-    if not ctx.voice_client.is_playing():
-        play_next(ctx)
-
-@bot.command()
-async def skip(ctx):
-
-    if ctx.voice_client and ctx.voice_client.is_playing():
-        ctx.voice_client.stop()
-        await ctx.send("Skipping ⏭️")
-
-@bot.command()
-async def stop(ctx):
-    if ctx.voice_client:
-        ctx.voice_client.stop()
-        get_queue(ctx.guild.id).clear()
-        await ctx.send("Successfully stopped 🛑")
-
-@bot.command()
-async def queue(ctx):
-    q = get_queue(ctx.guild.id)
-
-    embed = discord.Embed(
-        title="🎧 Music Queue",
-        color=discord.Color.purple()
-    )
-
-    if len(q) == 0:
-        embed.description = "Empty ❌"
-        await ctx.send(embed=embed)
-        return
-
-    description = ""
-
-    for i, song in enumerate(q[:10], start=1):  
-        description += f"**{i}.** {song['title']}\n"
-
-    embed.description = description
-
-
-    embed.set_footer(text=f"{len(q)} song(s) in queue")
-
-    await ctx.send(embed=embed)
 @bot.command()
 async def clear(ctx, amount: str):
     if amount.lower() == "all":
@@ -174,19 +82,8 @@ async def clear(ctx, amount: str):
         msg = await ctx.send(embed=embed)
         await asyncio.sleep(3)
         await msg.delete()
-@bot.command()
-async def userinfo(ctx, member: discord.Member = None):
-    member = member or ctx.author
 
-    embed = discord.Embed(title="User Info")
-    embed.add_field(name="Name", value=member.name)
-    embed.add_field(name="ID", value=member.id)
-    embed.set_thumbnail(url=member.avatar.url)
-    color=discord.Color.purple()
-    await ctx.send(embed=embed)
-@bot.command()
-async def ping(ctx):
-    await ctx.send(f"My ping is {round(bot.latency * 1000)} ms")
+
 @bot.command()
 async def roast(ctx,member : discord.Member):
     await ctx.send(f"{member.mention} restarted ? 🐒 ")
@@ -211,9 +108,6 @@ async def stats(ctx):
     statEmbed.add_field(name="Channels",value=f"💬 Channels: {len(guild.channels)}")
     statEmbed.set_thumbnail(url=guild.icon.url)
     await ctx.send(embed=statEmbed)
-
-
-
 
 
 
@@ -276,6 +170,8 @@ async def music(ctx):
     
     await ctx.send(embed=musicEmbed)
 
+
+
 # LISTING ALL COMMANDS IN AN EMBED 
 @bot.command()
 async def helpMe(ctx):
@@ -326,9 +222,21 @@ async def helpMe(ctx):
         value="Shows the stats of the server",
         inline= True
         ) 
-        
-        
-        
+    helpEmbed.add_field(
+        name="AutoClear start",
+        value="Starts an autoclear that will clear the current channel every 2 mins (syntax : ?autoclear start)",
+        inline= True
+        ) 
+    helpEmbed.add_field(
+        name="AutoClear stop",
+        value="Stops the autoclear (syntax : ?autoclear stop)",
+        inline= True
+        )   
+    helpEmbed.add_field(
+        name="Setprefix",
+        value="Sets a new prefix for the bot (Saved for this server)(syntax : ?setprefix PREFIX)",
+        inline= True
+        )
         
         
         
