@@ -8,7 +8,7 @@ from discord.ext import commands
 import logging
 from dotenv import load_dotenv
 import os
-import yt_dlp
+
 import asyncio
 from discord import FFmpegPCMAudio
 import time
